@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Repartidor{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">Editar Repartidor: {{ repartidor.nombre }} {{ repartidor.apellido }}</h1>
+
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form action="{{ url_for('editar_repartidor', id_repartidor=repartidor.id_repartidor) }}" method="POST">
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" value="{{ repartidor.nombre }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="apellido" class="form-label">Apellido</label>
+                            <input type="text" class="form-control" id="apellido" name="apellido" value="{{ repartidor.apellido }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="telefono" class="form-label">Teléfono (opcional)</label>
+                            <input type="text" class="form-control" id="telefono" name="telefono" value="{{ repartidor.telefono or '' }}">
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="activo" name="activo" {% if repartidor.activo %}checked{% endif %}>
+                            <label class="form-check-label" for="activo">Activo</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Actualizar Repartidor</button>
+                        <a href="{{ url_for('gestion_repartidores') }}" class="btn btn-secondary">Cancelar</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

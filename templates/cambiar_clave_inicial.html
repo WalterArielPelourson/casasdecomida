@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Cambiar Contraseña Inicial{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-warning text-white text-center">
+                    <h4>Cambiar Contraseña</h4>
+                    <p class="mb-0">¡Es tu primer inicio de sesión! Por favor, establece una nueva contraseña segura.</p>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="nueva_clave" class="form-label">Nueva Contraseña:</label>
+                            <input type="password" class="form-control" id="nueva_clave" name="nueva_clave" required minlength="6">
+                            <small class="form-text text-muted">Mínimo 6 caracteres.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmar_clave" class="form-label">Confirmar Nueva Contraseña:</label>
+                            <input type="password" class="form-control" id="confirmar_clave" name="confirmar_clave" required>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-warning">Actualizar Contraseña</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

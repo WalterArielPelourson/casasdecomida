@@ -1,0 +1,32 @@
+# Archivos de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/  # Directorio de tu entorno virtual (¡NO SUBIR!)
+*.egg-info
+.mypy_cache/
+.pytest_cache/
+.vscode/ # Opcional: Ignorar configuraciones de VSCode
+*.log  # Archivos de log
+
+# Base de datos SQLite
+*.db  # Tu archivo .db (ej. casa_comida.db) ¡NO SUBIR!
+*.sqlite3 # O cualquier otra extensión que uses para SQLite
+
+# Archivos de configuración sensibles
+config.py  # ¡MUY IMPORTANTE! Si tu config.py tiene claves sensibles, IGNÓRALO.
+           # En su lugar, usa variables de entorno en producción.
+           # O crea un 'config_template.py' para el repositorio con valores por defecto/marcadores.
+
+# Archivos generados por PyInstaller (si conviertes a escritorio)
+__pyinstaller__/
+build/
+dist/
+*.spec
+
+# Archivos específicos de sistemas operativos
+.DS_Store # macOS
+Thumbs.db # Windows

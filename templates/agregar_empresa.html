@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Agregar Empresa{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card mt-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Agregar Nueva Empresa</h4>
+            </div>
+            <div class="card-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                <form action="{{ url_for('agregar_empresa') }}" method="POST">
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre de la Empresa</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" required value="{{ request_form.nombre if request_form.nombre else '' }}">
+                    </div>
+                    
+                    {# NUEVO CAMPO: Número de Celular #}
+                    <div class="mb-3">
+                        <label for="telefono" class="form-label">Número de Celular</label>
+                        <input type="text" class="form-control" id="telefono" name="telefono" value="{{ request_form.telefono if request_form.telefono else '' }}">
+                        <div class="form-text">Opcional.</div>
+                    </div>
+
+                    {# NUEVO CAMPO: Dirección #}
+                    <div class="mb-3">
+                        <label for="direccion" class="form-label">Dirección</label>
+                        <input type="text" class="form-control" id="direccion" name="direccion" value="{{ request_form.direccion if request_form.direccion else '' }}">
+                        <div class="form-text">Opcional.</div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('gestion_empresas') }}" class="btn btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-plus-circle"></i> Guardar Empresa
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

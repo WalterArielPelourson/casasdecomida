@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}{% endblock %} {# Puedes poner un título específico si quieres, pero vacío también funciona #}
+
+{% block content %}
+    <div class="jumbotron text-center bg-light p-5 rounded">
+        <h1 class="display-4">¡Bienvenidos a La Esquina del Sabor!</h1>
+        <p class="lead">Donde cada plato cuenta una historia de sabor y tradición.</p>
+        <hr class="my-4">
+        <p>Explora nuestra deliciosa carta y haz tu pedido online.</p>
+        {# --- MODIFICACIÓN CLAVE: El botón "Ver Nuestra Carta" ahora apunta a la ruta 'hacer_pedido' --- #}
+        <a class="btn btn-primary btn-lg" href="{{ url_for('hacer_pedido') }}" role="button">Ver Carta y Hacer Pedido</a>
+        {# ------------------------------------------------------------------------------------ #}
+    </div>
+
+    <div class="mt-5 text-center">
+        <h2>Horarios de Atención</h2>
+        {% if info and info.horario_atencion %}
+            <ul class="list-unstyled">
+                {% for dia_horario in info.horario_atencion %}
+                    <li>{{ dia_horario }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Horarios de atención no disponibles.</p>
+        {% endif %}
+
+        <h2 class="mt-4">Nuestra Ubicación</h2>
+        {% if info and info.direccion %}
+            <p>{{ info.direccion }}</p>
+            {% if info.url_mapa %}
+                <a href="{{ info.url_mapa }}" target="_blank" class="btn btn-outline-info">Ver en Google Maps</a>
+            {% endif %}
+        {% else %}
+            <p>Ubicación no disponible.</p>
+        {% endif %}
+    </div>
+{% endblock %}

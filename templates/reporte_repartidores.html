@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Reporte de Pagos a Repartidores{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">Reporte de Pagos a Repartidores</h1>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h5>Filtrar Reporte</h5>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('reporte_repartidores') }}" method="POST" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="id_repartidor" class="form-label">Repartidor:</label>
+                    <select class="form-select" id="id_repartidor" name="id_repartidor">
+                        <option value="todos">Todos los Repartidores</option>
+                        {% for rep in repartidores %}
+                            <option value="{{ rep.id_repartidor }}" {% if request.form.id_repartidor == rep.id_repartidor | string %}selected{% endif %}>
+                                {{ rep.nombre }} {{ rep.apellido }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="fecha_inicio" class="form-label">Fecha Inicio:</label>
+                    <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ request.form.fecha_inicio if request.form.fecha_inicio else now.strftime('%Y-%m-01') }}" required>
+                </div>
+                <div class="col-md-3">
+                    <label for="fecha_fin" class="form-label">Fecha Fin:</label>
+                    <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" value="{{ request.form.fecha_fin if request.form.fecha_fin else now.strftime('%Y-%m-%d') }}" required>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Generar Reporte</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if reporte_generado %}
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Resultados del Reporte</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Repartidor:</strong> {{ reporte_generado.repartidor_nombre }}</p>
+                <p><strong>Período:</strong> {{ reporte_generado.fecha_inicio }} al {{ reporte_generado.fecha_fin }}</p>
+                
+                {% if reporte_generado.pagos %}
+                    <div class="table-responsive mt-3">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Fecha y Hora</th>
+                                    <th>Monto Pagado</th>
+                                    <th>ID Pedido Origen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pago in reporte_generado.pagos %}
+                                    <tr>
+                                        <td>{{ pago.fecha_hora_formateada }}</td>
+                                        <td>${{ "{:,.2f}".format(pago.monto) }}</td>
+                                        <td>
+                                            {% if pago.id_pedido_origen %}
+                                                <a href="{{ url_for('detalle_pedido', id_pedido=pago.id_pedido_origen) }}">#{{ pago.id_pedido_origen }}</a>
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-dark">
+                                    <th colspan="2" class="text-end">TOTAL A PAGAR:</th>
+                                    <th>${{ "{:,.2f}".format(reporte_generado.total_pagado) }}</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-center text-muted">No se encontraron pagos para el repartidor y período seleccionados.</p>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

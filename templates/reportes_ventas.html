@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes de Ventas{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0">Reportes de Ventas</h4>
+            </div>
+            <div class="card-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form action="{{ url_for('reportes_ventas') }}" method="POST" class="mb-4">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+                            <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ start_date }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="fecha_fin" class="form-label">Fecha Fin</label>
+                            <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" value="{{ end_date }}" required>
+                        </div>
+                        {% if current_user.has_role('super_admin') %}
+                            <div class="col-md-4">
+                                <label for="id_empresa_reporte" class="form-label">Empresa</label>
+                                <select class="form-select" id="id_empresa_reporte" name="id_empresa_reporte">
+                                    <option value="all" {% if selected_company_id == 'all' or selected_company_id is none %}selected{% endif %}>Todas las Empresas</option>
+                                    {% for empresa in empresas_disponibles %}
+                                        <option value="{{ empresa.id_empresa }}" {% if selected_company_id and selected_company_id|string == empresa.id_empresa|string %}selected{% endif %}>
+                                            {{ empresa.nombre }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        {% else %}
+                             <input type="hidden" name="id_empresa_reporte" value="{{ current_user.id_empresa }}">
+                        {% endif %}
+                        <div class="col-md-12 text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-bar-chart-line"></i> Generar Reportes
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                {% if reportes %}
+                    <hr>
+                    <h5 class="mb-3">Resultados del Reporte ({{ start_date }} al {{ end_date }})</h5>
+                    {% if selected_company_id and selected_company_id != 'all' %}
+                        <p class="small">Reporte para la empresa ID: {{ selected_company_id }}</p>
+                    {% elif selected_company_id == 'all' or selected_company_id is none %}
+                        <p class="small">Reporte para Todas las Empresas</p>
+                    {% endif %}
+
+                    {# Productos más vendidos por rubro (SUMADO) #}
+                    <h6 class="mt-4">Productos Más Vendidos por Rubro</h6>
+                    {% if reportes.top_selling_by_rubro %}
+                        <table class="table table-striped table-hover table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Rubro</th>
+                                    <th>Cantidad Vendida</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in reportes.top_selling_by_rubro %}
+                                    <tr>
+                                        <td><strong>{{ item.rubro }}</strong></td>
+                                        <td>{{ item.total_cantidad_vendida }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p>No se encontraron productos más vendidos por rubro en este período.</p>
+                    {% endif %}
+
+                    {# Productos más vendidos en general #}
+                    <h6 class="mt-4">Productos Más Vendidos (General)</h6>
+                    {% if reportes.top_selling_overall %}
+                        <table class="table table-striped table-hover table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Plato</th>
+                                    <th>Rubro</th>
+                                    <th>Cantidad Vendida</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in reportes.top_selling_overall %}
+                                    <tr>
+                                        <td>{{ item.nombre }}</td>
+                                        <td>{{ item.rubro }}</td>
+                                        <td>{{ item.total_cantidad_vendida }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p>No se encontraron productos más vendidos en general en este período.</p>
+                    {% endif %}
+                    
+                    {# Cantidad total vendida de cada producto (Reutilizado top_selling_overall y renombrado) #}
+                    <h6 class="mt-4">Cantidad Total Vendida de Cada Producto</h6>
+                    {% if reportes.total_quantity_per_product_overall %}
+                        <table class="table table-striped table-hover table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Plato</th>
+                                    <th>Rubro</th>
+                                    <th>Cantidad Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in reportes.total_quantity_per_product_overall %}
+                                    <tr>
+                                        <td>{{ item.nombre }}</td>
+                                        <td>{{ item.rubro }}</td>
+                                        <td>{{ item.total_cantidad_vendida }}</td> {# Usamos la misma columna, pero el título es más claro #}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p>No se encontraron cantidades totales de productos vendidas en este período.</p>
+                    {% endif %}
+
+
+                    {# Medios de pago más usados #}
+                    <h6 class="mt-4">Medios de Pago Más Usados</h6>
+                    {% if reportes.most_used_payment_methods %}
+                        <table class="table table-striped table-hover table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Forma de Pago</th>
+                                    <th>Total de Usos</th>
+                                    <th>Monto Total Recibido</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in reportes.most_used_payment_methods %}
+                                    <tr>
+                                        <td>{{ item.forma_pago }}</td>
+                                        <td>{{ item.total_usos }}</td>
+                                        <td>${{ "%.2f" | format(item.total_monto | float) }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p>No se encontraron datos de medios de pago en este período.</p>
+                    {% endif %}
+
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

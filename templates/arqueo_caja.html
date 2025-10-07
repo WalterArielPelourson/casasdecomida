@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Arqueo de Caja{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">Arqueo de Caja</h1>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card p-4 shadow-sm mb-4">
+                <h4 class="mb-3">Registrar Egreso Manual</h4>
+                <form action="{{ url_for('arqueo_caja') }}" method="POST">
+                    <input type="hidden" name="registrar_egreso" value="1">
+                    <div class="mb-3">
+                        <label for="monto_egreso" class="form-label">Monto</label>
+                        <input type="number" step="0.01" class="form-control" id="monto_egreso" name="monto" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="descripcion_egreso" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="descripcion_egreso" name="descripcion" rows="2" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-danger w-100"><i class="bi bi-cash-stack"></i> Registrar Egreso</button>
+                </form>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card p-4 shadow-sm mb-4">
+                <h4 class="mb-3">Realizar Arqueo</h4>
+                <form action="{{ url_for('arqueo_caja') }}" method="POST">
+                    <input type="hidden" name="realizar_arqueo" value="1">
+                    <div class="mb-3">
+                        <label for="fecha_inicio" class="form-label">Fecha de Inicio</label>
+                        <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ now.strftime('%Y-%m-%d') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="fecha_fin" class="form-label">Fecha de Fin</label>
+                        <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" value="{{ now.strftime('%Y-%m-%d') }}" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-calculator"></i> Mostrar Arqueo</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% if arqueo_resultados %}
+        <div class="mt-5">
+            <h3 class="mb-3">Resultados del Arqueo ({{ arqueo_resultados.fecha_inicio }} a {{ arqueo_resultados.fecha_fin }})</h3>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Fecha y Hora</th>
+                            <th>Tipo</th>
+                            <th>Monto</th>
+                            <th>Descripción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for movimiento in arqueo_resultados.movimientos %}
+                            <tr>
+                                <td>{{ movimiento.fecha_hora_formateada }}</td>
+                                <td><span class="badge {% if movimiento.tipo == 'Ingreso' %}bg-success{% else %}bg-danger{% endif %}">{{ movimiento.tipo }}</span></td>
+                                <td>${{ "{:,.2f}".format(movimiento.monto) }}</td>
+                                <td>{{ movimiento.descripcion }}</td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No hay movimientos para el período seleccionado.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-primary">
+                            <th colspan="2">Total Ingresos:</th>
+                            <th colspan="2">${{ "{:,.2f}".format(arqueo_resultados.total_ingresos) }}</th>
+                        </tr>
+                        <tr class="table-danger">
+                            <th colspan="2">Total Egresos:</th>
+                            <th colspan="2">${{ "{:,.2f}".format(arqueo_resultados.total_egresos) }}</th>
+                        </tr>
+                        <tr class="table-success fw-bold">
+                            <th colspan="2">BALANCE FINAL:</th>
+                            <th colspan="2">${{ "{:,.2f}".format(arqueo_resultados.balance) }}</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Establecer la fecha actual en los campos de fecha de inicio y fin por defecto
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0'); // Enero es 0!
+        const dd = String(today.getDate()).padStart(2, '0');
+        const todayFormatted = `${yyyy}-${mm}-${dd}`;
+
+        const fechaInicioInput = document.getElementById('fecha_inicio');
+        const fechaFinInput = document.getElementById('fecha_fin');
+        
+        if (fechaInicioInput && !fechaInicioInput.value) {
+            fechaInicioInput.value = todayFormatted;
+        }
+        if (fechaFinInput && !fechaFinInput.value) {
+            fechaFinInput.value = todayFormatted;
+        }
+    });
+</script>
+{% endblock %}

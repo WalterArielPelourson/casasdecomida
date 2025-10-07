@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Configuración{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">Gestión de Configuración</h1>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5>Costo de Envío a Clientes</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('gestion_configuracion') }}" method="POST">
+                        <div class="mb-3">
+                            <label for="costo_envio" class="form-label">Valor actual por envío a cliente:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" step="0.01" class="form-control" id="costo_envio" name="costo_envio" value="{{ costo_envio_actual | round(2) }}" required>
+                            </div>
+                            <div class="form-text">Define el costo fijo que se agregará a los pedidos con envío a domicilio.</div>
+                        </div>
+                        <button type="submit" name="update_envio_costo" class="btn btn-primary">Actualizar Costo de Envío</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5>Pago a Repartidor por Envío</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('gestion_configuracion') }}" method="POST">
+                        <div class="mb-3">
+                            <label for="pago_repartidor_por_envio" class="form-label">Valor actual de pago al repartidor:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" step="0.01" class="form-control" id="pago_repartidor_por_envio" name="pago_repartidor_por_envio" value="{{ pago_repartidor_actual | round(2) }}" required>
+                            </div>
+                            <div class="form-text">Monto que se paga a un repartidor por cada envío realizado.</div>
+                        </div>
+                        <button type="submit" name="update_pago_repartidor" class="btn btn-primary">Actualizar Pago a Repartidor</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

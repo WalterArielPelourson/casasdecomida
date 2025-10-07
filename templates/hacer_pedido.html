@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+
+{% block title %}Hacer Pedido{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">Realizar Pedido</h1>
+
+    <div class="row custom-layout-container"> {# Nuevo contenedor para el layout #}
+        {# --- COLUMNA IZQUIERDA: FORMULARIO DE PEDIDO (Fija) --- #}
+        <div class="col-md-6 custom-fixed-left-column"> {# Clase personalizada para columna fija #}
+            <form action="{{ url_for('hacer_pedido') }}" method="POST" id="pedido-form">
+                <h2 class="mb-3">Datos del Cliente y Entrega</h2>
+                <div class="mb-3">
+                    <label for="nombre" class="form-label">Nombre</label>
+                    <input type="text" class="form-control" id="nombre" name="nombre" required value="{{ request_form.get('nombre', '') }}">
+                </div>
+                <div class="mb-3">
+                    <label for="apellido" class="form-label">Apellido</label>
+                    <input type="text" class="form-control" id="apellido" name="apellido" required value="{{ request_form.get('apellido', '') }}">
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="es_envio_solicitado" name="es_envio_solicitado" onchange="toggleDireccionField()" {% if request_form.get('es_envio_solicitado') %}checked{% endif %}>
+                    <label class="form-check-label" for="es_envio_solicitado">Deseo envío a domicilio (Costo: ${{ costo_envio | int }})</label>
+                </div>
+
+                <div id="direccion_group" class="mb-3" style="display: none;">
+                    <label for="direccion" class="form-label">Dirección de Entrega</label>
+                    <input type="text" class="form-control" id="direccion" name="direccion" placeholder="Ej: Calle Falsa 123, Piso 5 Depto B, CABA" value="{{ request_form.get('direccion', '') }}">
+                    <div class="form-text">La dirección es necesaria solo si seleccionas envío a domicilio.</div>
+                </div>
+
+                <h2 class="mt-4 mb-3">Horario de Entrega / Retiro</h2>
+                <div class="mb-3">
+                    <label for="horario_entrega" class="form-label">Seleccione un horario</label>
+                    <select class="form-select" id="horario_entrega" name="horario_entrega" required>
+                        <option value="">-- Seleccione --</option>
+                        {% for horario in franjas_horarias %}
+                            <option value="{{ horario }}" {% if request_form.get('horario_entrega') == horario %}selected{% endif %}>{{ horario }}</option>
+                        {% else %}
+                            <option value="" disabled>No hay horarios disponibles hoy.</option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">Horarios disponibles en franjas de 15 minutos.</div>
+                </div>
+
+                <h2 class="mt-4 mb-3">Forma de Pago</h2>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="forma_pago" id="pagoEfectivo" value="Efectivo" {% if request_form.get('forma_pago') == 'Efectivo' or not request_form.get('forma_pago') %}checked{% endif %}>
+                        <label class="form-check-label" for="pagoEfectivo">
+                            Efectivo
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="forma_pago" id="pagoTarjeta" value="Tarjeta de Crédito/Débito" {% if request_form.get('forma_pago') == 'Tarjeta de Crédito/Débito' %}checked{% endif %}>
+                        <label class="form-check-label" for="pagoTarjeta">
+                            Tarjeta de Crédito/Débito (al recibir)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="forma_pago" id="pagoMercadoPago" value="Mercado Pago" {% if request_form.get('forma_pago') == 'Mercado Pago' %}checked{% endif %}>
+                        <label class="form-check-label" for="pagoMercadoPago">
+                            Mercado Pago (QR al recibir)
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success btn-lg mt-4 w-100">Confirmar Pedido</button>
+            </form>
+            <div class="mt-4 pt-3 border-top">
+                <h2 class="mb-3">Tu Carrito</h2>
+                <div id="carrito-view" class="card shadow-sm p-3">
+                    {% if carrito_detalle %}
+                        <ul class="list-group list-group-flush">
+                            {% for item in carrito_detalle %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        {{ item.cantidad }} x {{ item.nombre }} <br>
+                                        <small class="text-muted">@ ${{ "{:,.2f}".format(item.precio_unitario) }} c/u</small>
+                                    </div>
+                                    <div>
+                                        <strong>${{ "{:,.2f}".format(item.subtotal) }}</strong>
+                                        <button type="button" class="btn btn-sm btn-outline-danger ms-2 remove-from-cart-btn" data-plato-id="{{ item.id_plato }}">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        <div class="mt-3 pt-3 border-top d-flex justify-content-between">
+                            <h5>Subtotal productos:</h5>
+                            <h5 id="subtotal_productos_display">${{ "{:,.2f}".format(total_carrito) }}</h5>
+                        </div>
+                        <div class="mt-2 d-flex justify-content-between">
+                            <h5>Costo de Envío:</h5>
+                            <h5 id="costo_envio_display">${{ "{:,.2f}".format(costo_envio if request_form.get('es_envio_solicitado') else 0.00) }}</h5>
+                        </div>
+                        <div class="mt-2 pt-3 border-top d-flex justify-content-between">
+                            <h4>TOTAL ESTIMADO:</h4>
+                            <h4 id="total-estimado-carrito">
+                                <strong>${{ "{:,.2f}".format(total_carrito + (costo_envio if request_form.get('es_envio_solicitado') else 0.00)) }}</strong>
+                            </h4>
+                        </div>
+                    {% else %}
+                        <p class="text-center text-muted">El carrito está vacío. ¡Agregá algo de la carta!</p>
+                    {% endif %}
+                </div>
+                {% if carrito_detalle %}
+                <div class="mt-3 d-grid">
+                     <button type="button" class="btn btn-warning" id="clear-cart-btn"><i class="bi bi-trash"></i> Vaciar Carrito</button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {# -------------------------------------------------------- #}
+
+        {# --- COLUMNA DERECHA: CARTA (Movil con scroll) --- #}
+        <div class="col-md-6 custom-scroll-right-column"> {# Clase personalizada para columna con scroll #}
+            <h2 class="mb-3">Nuestra Carta</h2>
+            {% if platos %}
+                <div class="row row-cols-1 g-3">
+                    {% for plato in platos %}
+                        <div class="col">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ plato.nombre }}</h5>
+                                    <p class="card-text text-muted">{{ plato.descripcion }}</p>
+                                    <h4 class="card-subtitle mb-2 text-primary">${{ "{:,.2f}".format(plato.precio) }}</h4>
+                                </div>
+                                <div class="card-footer bg-transparent border-top d-flex justify-content-end align-items-center">
+                                    <div class="input-group input-group-sm quantity-control" style="width: 130px;">
+                                        <button class="btn btn-outline-danger btn-minus" type="button" data-plato-id="{{ plato.id_plato }}">-</button>
+                                        <input type="text" class="form-control text-center quantity-input" value="{{ carrito.get(plato.id_plato | string, {'cantidad': 0}).cantidad }}" data-plato-id="{{ plato.id_plato }}" readonly>
+                                        <button class="btn btn-outline-success btn-plus" type="button" data-plato-id="{{ plato.id_plato }}">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-center text-muted">Aún no hay platos en la carta. ¡Vuelve pronto!</p>
+            {% endif %}
+        </div>
+        {# -------------------------------------------------------- #}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    console.log("Script de hacer_pedido.html cargado.");
+
+    const direccionGroup = document.getElementById('direccion_group');
+    const direccionInput = document.getElementById('direccion');
+    const esEnvioCheckbox = document.getElementById('es_envio_solicitado');
+    const costoEnvioDisplay = document.getElementById('costo_envio_display');
+    const totalEstimadoCarrito = document.getElementById('total-estimado-carrito');
+    const subtotalProductosDisplay = document.getElementById('subtotal_productos_display'); 
+
+    let baseTotalProductos = {{ total_carrito | round(2) }}; 
+    const COSTO_ENVIO_CONFIG = {{ costo_envio | round(2) }};
+
+    function updateOrderSummary() {
+        const currentEnvioCost = esEnvioCheckbox.checked ? COSTO_ENVIO_CONFIG : 0.00;
+        if (costoEnvioDisplay) costoEnvioDisplay.textContent = `$${currentEnvioCost.toFixed(2)}`;
+        if (subtotalProductosDisplay) subtotalProductosDisplay.textContent = `$${baseTotalProductos.toFixed(2)}`;
+        if (totalEstimadoCarrito) totalEstimadoCarrito.innerHTML = `<strong>$${(baseTotalProductos + currentEnvioCost).toFixed(2)}</strong>`;
+        console.log(`Resumen actualizado: Subtotal=${baseTotalProductos}, Envío=${currentEnvioCost}`);
+    }
+
+    function toggleDireccionField() {
+        console.log(`Checkbox de envío cambiado. Estado: ${esEnvioCheckbox.checked}`);
+        if (esEnvioCheckbox.checked) {
+            if (direccionGroup) direccionGroup.style.display = 'block';
+            if (direccionInput) direccionInput.setAttribute('required', 'required');
+        } else {
+            if (direccionGroup) direccionGroup.style.display = 'none';
+            if (direccionInput) direccionInput.removeAttribute('required');
+        }
+        updateOrderSummary();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("DOM Cargado en hacer_pedido.html, inicializando listeners.");
+
+        toggleDireccionField(); 
+
+        const cartItemCountElement = document.getElementById('cart-item-count'); 
+        if (!cartItemCountElement) {
+            console.error("Elemento #cart-item-count no encontrado en el DOM.");
+        }
+
+        function updateNavbarCartCount() {
+            fetch('/api/get_cart_status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && cartItemCountElement) {
+                        cartItemCountElement.textContent = data.total_items;
+                        console.log(`Contador de navbar actualizado: ${data.total_items}`);
+                    } else {
+                        console.error('Error al obtener estado del carrito (navbar):', data.message);
+                    }
+                })
+                .catch(error => console.error('Error de red al obtener estado del carrito (navbar):', error));
+        }
+        
+        document.body.addEventListener('click', function(event) {
+            const target = event.target; 
+            let platoId;
+            let quantityInput;
+            let currentQuantity;
+
+            if (target.classList.contains('btn-plus')) {
+                platoId = target.dataset.platoId;
+                quantityInput = document.querySelector(`.quantity-input[data-plato-id="${platoId}"]`);
+                if (quantityInput) {
+                    currentQuantity = parseInt(quantityInput.value);
+                    currentQuantity++;
+                    quantityInput.value = currentQuantity;
+                    console.log(`Clic en +, platoId: ${platoId}, nueva cantidad: ${currentQuantity}`);
+                    updateCart(platoId, currentQuantity); 
+                } else {
+                    console.error(`Input de cantidad para platoId ${platoId} no encontrado.`);
+                }
+            } 
+            else if (target.classList.contains('btn-minus')) {
+                platoId = target.dataset.platoId;
+                quantityInput = document.querySelector(`.quantity-input[data-plato-id="${platoId}"]`);
+                if (quantityInput) {
+                    currentQuantity = parseInt(quantityInput.value);
+                    if (currentQuantity > 0) {
+                        currentQuantity--;
+                        quantityInput.value = currentQuantity;
+                    } else {
+                        alert('La cantidad no puede ser menor a 0.');
+                        quantityInput.value = 0;
+                    }
+                    console.log(`Clic en -, platoId: ${platoId}, nueva cantidad: ${currentQuantity}`);
+                    updateCart(platoId, currentQuantity);
+                } else {
+                    console.error(`Input de cantidad para platoId ${platoId} no encontrado.`);
+                }
+            }
+        });
+
+        function updateCart(platoId, quantity) {
+            console.log(`Llamando a updateCart para plato ${platoId} con cantidad ${quantity}`);
+            const formData = new FormData();
+            formData.append('cantidad', quantity);
+
+            fetch(`/api/update_cart_quantity/${platoId}`, {
+                method: 'POST',
+                body: formData 
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log(`Éxito: ${data.message}`);
+                    updateNavbarCartCount();
+                    
+                    fetch('/api/get_cart_status') 
+                        .then(res => res.json())
+                        .then(cartStatus => {
+                            if (cartStatus.success) {
+                                baseTotalProductos = cartStatus.total_precio;
+                                updateOrderSummary();
+                                updateCarritoSummarySection();
+                            }
+                        })
+                        .catch(err => console.error('Error al obtener el estado del carrito para resumen:', err));
+
+                } else {
+                    alert('Error al actualizar el carrito: ' + data.message);
+                    console.error('Error del servidor:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error de red al actualizar carrito:', error);
+                alert('Hubo un error de conexión al actualizar el carrito.');
+            });
+        }
+
+        // --- NUEVA FUNCIÓN: Para actualizar solo la sección del resumen del carrito ---
+        function updateCarritoSummarySection() {
+            // Requerirá un endpoint AJAX para obtener el HTML del carrito o reconstruirlo
+            // Para simplicidad en esta respuesta, y dado que ya se actualiza el total,
+            // si se necesita una actualización completa de los items, se recargará.
+            // Si quieres evitar la recarga, necesitarás:
+            // 1. Un nuevo endpoint en Flask que devuelva solo el HTML de carrito_detalle.
+            // 2. JS para reemplazar el contenido de #carrito-view con el nuevo HTML.
+            // Por ahora, para reflejar los items agregados/eliminados, se recarga.
+            // Si solo se cambia cantidad sin añadir/quitar un item nuevo, el subtotal se actualiza localmente.
+            window.location.reload(); 
+        }
+        
+        document.querySelectorAll('.remove-from-cart-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const platoId = this.dataset.platoId;
+                if (confirm('¿Estás seguro de que quieres eliminar este producto del carrito?')) {
+                     const quantityInput = document.querySelector(`.quantity-input[data-plato-id="${platoId}"]`);
+                     if (quantityInput) quantityInput.value = 0; 
+                    updateCart(platoId, 0); 
+                    window.location.reload(); 
+                }
+            });
+        });
+
+        const clearCartBtn = document.getElementById('clear-cart-btn');
+        if (clearCartBtn) {
+            clearCartBtn.addEventListener('click', function() {
+                if (confirm('¿Estás seguro de que quieres vaciar todo el carrito?')) {
+                    fetch('/api/clear_cart', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(data.message);
+                            window.location.reload(); 
+                        } else {
+                            alert('Error al vaciar carrito: ' + data.message);
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                }
+            });
+        }
+    });
+</script>
+<style>
+    /* Estilos personalizados para el layout de 3 secciones */
+
+    /* Contenedor principal para el layout */
+    .custom-layout-container {
+        display: flex; /* Habilitar flexbox para el contenedor */
+        /* Asegura que ocupe todo el espacio disponible */
+        min-height: calc(100vh - (var(--navbar-height, 56px) + var(--footer-height, 0px) + 2rem)); /* Resta el alto del navbar, footer y paddings */
+        margin-top: 1rem; /* Pequeño margen superior */
+    }
+
+    /* Columna izquierda: formulario de pedido y carrito (fija) */
+    .custom-fixed-left-column {
+        position: sticky; /* Hace que la columna sea pegajosa */
+        top: var(--navbar-height, 56px); /* Pegar justo debajo del navbar */
+        height: calc(100vh - (var(--navbar-height, 56px) + 2rem)); /* Ocupar casi toda la altura de la ventana */
+        overflow-y: auto; /* Habilitar scroll interno si el contenido es demasiado alto */
+        padding-right: 15px; /* Espacio entre las columnas */
+        /* background-color: #f8f9fa; Opcional: para diferenciar visualmente */
+        /* border-right: 1px solid #dee2e6; Opcional: un borde separador */
+        z-index: 10; /* Asegurarse de que esté por encima del contenido que hace scroll */
+    }
+
+    /* Columna derecha: carta (con scroll) */
+    .custom-scroll-right-column {
+        overflow-y: auto; /* Habilitar scroll vertical para esta columna */
+        height: calc(100vh - (var(--navbar-height, 56px) + 2rem)); /* Ocupar casi toda la altura de la ventana */
+        padding-left: 15px; /* Espacio entre las columnas */
+        /* z-index: 5; Asegurarse de que esté debajo de la columna fija si se superponen (en casos de scroll extremo) */
+    }
+
+    /* Ajustes para el navbar si es fijo */
+    body {
+        padding-top: var(--navbar-height, 56px); /* Evitar que el contenido se superponga con el navbar fijo */
+    }
+
+    /* Media queries para pantallas más pequeñas donde el layout fijo podría no ser ideal */
+    @media (max-width: 767.98px) {
+        .custom-layout-container {
+            display: block; /* Volver al flujo normal de bloques en móviles */
+            min-height: auto;
+        }
+        .custom-fixed-left-column,
+        .custom-scroll-right-column {
+            position: static; /* Quitar el comportamiento sticky */
+            height: auto; /* Quitar la altura fija */
+            overflow-y: visible; /* Quitar el scroll interno */
+            padding-right: var(--bs-gutter-x, 1.5rem); /* Restaurar padding default de bootstrap */
+            padding-left: var(--bs-gutter-x, 1.5rem);
+            border-right: none;
+        }
+        .custom-fixed-left-column {
+             margin-bottom: 2rem; /* Espacio entre el formulario y la carta en móvil */
+        }
+    }
+
+    /* Variables CSS (opcional, pero útil para mantener consistencia) */
+    :root {
+        --navbar-height: 56px; /* Ajusta esto al alto real de tu navbar */
+        --footer-height: 0px; /* Si tienes footer, ajusta su alto */
+    }
+</style>
+{% endblock %}

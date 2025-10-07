@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Pedido Confirmado{% endblock %}
+
+{% block content %}
+    <div class="text-center my-4">
+        <h1 class="display-5 text-success">¡Pedido Confirmado!</h1>
+        <p class="lead">Tu pedido #{{ pedido.id_pedido }} ha sido recibido con éxito.</p>
+        <hr>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card p-4 shadow-lg printable-ticket">
+                {{ ticket_html | safe }} {# Renderiza el HTML del ticket generado en Python #}
+                <div class="d-grid gap-2 mt-4 no-print">
+                    <button class="btn btn-info btn-lg" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir Ticket</button>
+                    {% if not admin_view %} {# Mostrar botón de volver solo si no es vista de admin #}
+                    <a href="{{ url_for('index') }}" class="btn btn-secondary btn-lg"><i class="bi bi-house"></i> Volver al Inicio</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    /* Estilos para impresión */
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        .printable-ticket, .printable-ticket * {
+            visibility: visible;
+        }
+        .printable-ticket {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            border: none;
+            box-shadow: none;
+            padding: 20px;
+        }
+        .no-print {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}

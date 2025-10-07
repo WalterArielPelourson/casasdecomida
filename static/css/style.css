@@ -1,0 +1,66 @@
+/* static/css/style.css */
+
+body {
+    padding-top: 56px; /* Ajuste para la barra de navegación fija */
+    background-color: #f8f9fa;
+}
+
+.jumbotron {
+    background-color: #e9ecef;
+    padding: 2rem 1rem;
+    margin-bottom: 2rem;
+    border-radius: .3rem;
+}
+
+.card {
+    border: none;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.printable-ticket {
+    border: 1px dashed #ccc;
+    padding: 20px;
+    margin: 20px auto;
+    max-width: 600px;
+}
+
+.printable-ticket h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.printable-ticket hr {
+    border-top: 1px dashed #ccc;
+    margin: 10px 0;
+}
+
+/* Ocultar botones de impresión en el ticket cuando se imprime realmente */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    body * {
+        visibility: hidden;
+    }
+    .printable-ticket, .printable-ticket * {
+        visibility: visible;
+    }
+    .printable-ticket {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        border: none;
+        box-shadow: none;
+        padding: 0; /* Eliminar padding extra para la impresión */
+    }
+    .container {
+        width: 100% !important; /* Usar ancho completo en impresión */
+    }
+}
